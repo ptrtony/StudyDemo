@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ClockView">
+        <attr name="strockWidth" format="dimension"/>
+        <attr name="textSize" format="dimension"/>
+        <attr name="strockColor" format="color"/>
+        <attr name="clockCenterColor" format="color"/>
+    </declare-styleable>
+</resources>

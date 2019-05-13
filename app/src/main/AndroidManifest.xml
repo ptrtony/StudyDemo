@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.zhaofan.studaydemo">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity" />
+        <activity android:name=".DrawActivity" />
+        <!-- <activity android:name=".LoginActivity"></activity> -->
+        <activity android:name=".OnSaveStoreActivity" />
+        <activity android:name=".login.LoginActivity" />
+        <activity android:name=".customview.MyTextViewActivity" />
+        <activity android:name=".controlview.ControlViewActivity" />
+        <activity android:name=".controlview.TabLayoutActivity" />
+        <activity android:name=".controlview.DrawActivity" />
+        <activity android:name=".controlview.CoordinatorLayoutActivity" />
+        <activity android:name=".rxjava.RxjavaJustActivity" />
+        <activity android:name=".retrofit.TestRetrofitActivity" />
+        <activity android:name=".recyclerview.GrideDemoActivity">
+        </activity>
+        <activity android:name=".coor.CoordinateActivity" />
+        <activity android:name=".rxjava.RxDeboundActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
