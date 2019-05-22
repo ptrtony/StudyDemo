@@ -23,10 +23,15 @@
         <activity android:name=".controlview.CoordinatorLayoutActivity" />
         <activity android:name=".rxjava.RxjavaJustActivity" />
         <activity android:name=".retrofit.TestRetrofitActivity" />
-        <activity android:name=".recyclerview.GrideDemoActivity">
-        </activity>
+        <activity android:name=".recyclerview.GrideDemoActivity" />
         <activity android:name=".coor.CoordinateActivity" />
-        <activity android:name=".rxjava.RxDeboundActivity">
+        <activity android:name=".rxjava.RxDeboundActivity" />
+        <activity android:name=".motionlayout.MotionLayoutActivity" />
+        <activity android:name=".scrollview.RecyclerScrollViewActivity" />
+        <activity android:name=".anim.AnimationActivity"></activity>
+        <activity android:name=".view.AutoTextActivity">
+        </activity>
+        <activity android:name=".view.PainterViewActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
