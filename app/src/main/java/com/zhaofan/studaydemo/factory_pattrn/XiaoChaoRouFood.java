@@ -8,4 +8,13 @@ package com.zhaofan.studaydemo.factory_pattrn;
  * description:
  */
 public class XiaoChaoRouFood implements Food {
+    @Override
+    public void setSale(int sale) {
+
+    }
+
+    @Override
+    public void addCondiment(String comdiment) {
+
+    }
 }

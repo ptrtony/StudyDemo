@@ -28,10 +28,12 @@
         <activity android:name=".rxjava.RxDeboundActivity" />
         <activity android:name=".motionlayout.MotionLayoutActivity" />
         <activity android:name=".scrollview.RecyclerScrollViewActivity" />
-        <activity android:name=".anim.AnimationActivity"></activity>
-        <activity android:name=".view.AutoTextActivity">
+        <activity android:name=".anim.AnimationActivity" />
+        <activity android:name=".view.AutoTextActivity" />
+        <activity android:name=".view.PainterViewActivity"></activity>
+        <activity android:name=".ruler.RulerActivity">
         </activity>
-        <activity android:name=".view.PainterViewActivity">
+        <activity android:name=".touch_feedback.TouchActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
