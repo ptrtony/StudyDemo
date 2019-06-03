@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.reactivex.CompletableObserver;
 import io.reactivex.Notification;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -21,6 +22,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.BiPredicate;
 import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -1548,10 +1550,661 @@ public class Rxjava遍历集合 {
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-                        System.err.println("onError:"+throwable.getMessage());
+                        System.err.println("onError:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * takeLast操作符
+     * 发射Observable发射的最后n项数据
+     * 使用takeLast操作符修改原始Observable，我们可以只发射Observable发射的最后n项数据，忽略前面的数据
+     *
+     * 同样，如果对一个Observable使用takeLast(n)操作符，而那个Observable发射的数据小于n项，那么takeLast操作符生成的Observable
+     * 不会抛出异常或者发射onError通知，而是仍然发射哪些数据
+     *
+     * takeLast也有一个重载方法能够接受一个时长而不是数量参数，他会发射在原始Observable生命周期内最后一段时间的数据，时长和时间单位
+     * 通过参数指定
+     */
+    public void rxjavaTakeLastObservable(){
+        Observable.just(1,2,3,4,5)
+                .takeLast(3)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("onNext:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("onError:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+        Observable.intervalRange(0,10,1,1,TimeUnit.SECONDS)
+                .takeLast(3,TimeUnit.SECONDS)
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        System.out.println("Next:" + aLong);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
                     }
                 });
     }
+
+
+    //###############  skip和skipLast #######################
+
+    /**
+     * skip操作符
+     * 抑制Observable发射的前n项数据
+     *
+     * 使用skip操作符，可以忽略Observable发射的前n项数据，只保留之后的数据
+     *
+     * skip有一个重载方法能够接受一个时长而不是数量的参数，它会丢弃原始Observable开始那段时间发射的数据
+     * 时长和时间单位通过参数指定
+     */
+    public void rxjavaSkipObservable() {
+        Observable.just(1, 2, 3, 4)
+                .skip(3)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        list.add(4);
+        list.add(5);
+        list.add(6);
+        list.add(7);
+
+        Observable.just(list)
+                .concatMap(new Function<List<Integer>, ObservableSource<Integer>>() {
+                    @Override
+                    public Observable apply(List<Integer> integers) throws Exception {
+                        return Observable.fromIterable(integers);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+
+        Observable.just(1, 2, 3, 4)
+                .skip(3, TimeUnit.SECONDS)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+    }
+
+    /**
+     * skipLast操作符
+     * 抑制Observable发射的后n项数据
+     * 使用skipLast操作符修改原始Observable，可以忽略Observable发射的后n项数据，只保留前面的数据
+     *
+     *
+     * 执行结果
+     * 1 2
+     * sequence complete
+     *
+     * 同样 skipLast 也有一个重载方法接受一个时长而不是数量参数。他会丢弃在原始Observable生命周期最后一段时间内发射的数据
+     * 时长和时间单位通过参数指定
+     */
+
+    public void rxjavaSkipLastObservable(){
+        Observable.just(1,2,3,4,5)
+                .skipLast(3)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+
+        /**
+         * 这个重载方法默认在computation调度器上执行，也可以使用参数来指定其他调度器
+         */
+        Observable.interval(1,TimeUnit.SECONDS)
+                .skipLast(3,TimeUnit.SECONDS)
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        System.out.println("Next:" + aLong);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    //#######################  elementAt和ignoreElements ################
+
+    /**
+     * elementAt操作符
+     * 只发射n项数据
+     * elementAt操作符获取原始Observable发射的数据序列指定索引位置的数据项，然后当作自己的唯一数据发射
+     * 它传递一个基于0的索引值，发射原始Observable数据序列对应索引位置的值，如果传递给elementAt的值5，那么
+     * 它会发射第6项数据，如果传递的是一个负数，则将会抛出一个indexOutOfBoundsException
+     *
+     * 执行结果  这里输出的是3
+     */
+    public void rxjavaElementAtObservable(){
+        Observable.just(1,2,3,4,5)
+                .elementAt(2)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:"+integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+    }
+
+    /**
+     * ignoreElements操作符
+     * 不发射任何数据，只发射Observable的终止通知
+     * ignoreElements操作符抑制原始Observable发射的所有数据，只允许它的终止通知通过。它返回一个Complete类型
+     * 如果我们不关心一个Observable发射的数据，但是希望在它完成式或遇到错误终止时收到通知，那么就可以对Observable
+     * 使用ignoreElements操作符，它将确保永远不会调用观察者的onNext()方法
+     *
+     */
+
+    public void rxjavaIgnoreElementsObservable(){
+        Observable.just(1,2,3,4,5)
+                .ignoreElements()
+                .subscribe(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                });
+    }
+
+
+    //#################### distinct和filter##################
+
+    /**
+     * distinct 操作符
+     * 过滤掉重复的数据项
+     * distinct的过滤规则：只允许还没有发射的数据项通过
+     *
+     * 执行结果 1 2 3 4 5 34 6
+     *
+     * distinct还能接受一个Function作为参数，这个函数根据原始Observable发射的数据项产生一个Key，然后，比较这些Key而不是数据本身
+     * 来判定两个数据是否不同
+     * 与distinct类似的是distinctUntilChanged操作符，该操作符与distinct的区别是，它只判定一个数据和它的直接前驱是否不同
+     */
+
+    public void rxjavaDistinctObservable(){
+        Observable.just(1,2,3,4,5,5,34,5,6)
+                .distinct()
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:"+integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+
+    }
+
+    /**
+     * filter操作符
+     * 只发射通过谓语测试的数据项
+     * filter操作符使用你指定的一个谓语函数测试数据项，只有通过测试的数据才会被发射
+     */
+
+    public void rxjavaFilterObservable(){
+        Observable.just(2,32,2,3,4,32,21,23)
+                .filter(new Predicate<Integer>() {
+                    @Override
+                    public boolean test(Integer integer) throws Exception {
+                        return integer>6;
+                    }
+                })
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:"+integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+    }
+
+
+    /**
+     * debounce操作符
+     * 仅在过了一段指定的时间还没发射数据时才发射一个数据
+     * debounce操作符会过滤掉发射速率过快的数据项
+     *
+     * 执行的结果 6，7，8，9，10 Sequence complete.
+     */
+
+    public void rxjavaDebounceObservable(){
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws InterruptedException {
+                if (emitter.isDisposed()) return;
+                for (int i = 0; i <=10; i++) {
+                    emitter.onNext(i);//发射数据
+                    Thread.sleep(i * 1000);
+                }
+                emitter.onComplete();
+            }
+        }).debounce(500,TimeUnit.MILLISECONDS)
+                //如果发射数据的时间间隔少于400ms，就过滤拦截
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("Next:" + integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:" + throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete.");
+                    }
+                });
+
+    }
+
+
+    //############## 条件操作符和布尔操作符 ###################
+    /**
+     *1 amb()操作符
+     * amb():给定多个Observable，只让第一个发射数据的Observable发射全部数据
+     *
+     * 2 defaultIfEmpty():发射来自原始Observable的数据，如果原始Observable没有发射数据。则发射一个默认数据
+     *
+     * 3 skipUntil() :丢弃原始Observable发射的数据。直到第二个Observable发射了一个数据，然后发射原始Observable的剩余数据
+     *
+     * 4 takeWhile() and takeWhileWithIndex():发射原始Observable的数据，直到一个特定的条件为真，然后跳过剩余的数据
+     *
+     * rxjava的布尔操作符包括
+     *
+     * 1  all():判断是否所有的数据项都满足某个条件
+     *
+     * 2 contains():判断Observable是否会发射一个指定的值
+     *
+     * 3 exits() and isEmpty():判断Observable石佛欧发射了一个值
+     *
+     * 4 sequenceEqual(): 判断两个Observables发射的序列是否相等
+     */
+
+    /**
+     * all操作符
+     * 判定Observable发射的所有数据是否都满足某个条件
+     *
+     * 传递一个谓语函数给all操作符，这个函数接受原始Observable发射的数据，根据计算返回一个布尔值。all返回一个只发射单个布尔值的Observable
+     * 如果原始Observable正常终止并且每一项数据都满足条件，就返回true 如果原始Observable的任意一项数据不满足条件，就返回false
+     *
+     * all操作符默认不再任何特定的调度器上执行
+     */
+    public void rxjavaAllObservable(){
+        Observable.just(1,2,3,4,5)
+                .all(new Predicate<Integer>() {
+                    @Override
+                    public boolean test(Integer integer) throws Exception {
+                        return integer<10;
+                    }
+                })
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        System.out.println(aBoolean);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                });
+
+        //执行结果true
+        Observable.just(1,3,4,5,3,2)
+                .all(new Predicate<Integer>() {
+                    @Override
+                    public boolean test(Integer integer) throws Exception {
+                        return integer<3;
+                    }
+                })
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        System.out.println(aBoolean);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                });
+
+        //执行结果false
+
+    }
+
+    /**
+     * contains操作符
+     * 判定一个Observable是否发射了一个特定的值
+     * 给contains传一个指定的值，如果原始Observable发射了那个值，那么返回的Observable将发射true，否则发射false，与他相关的一个操作符是isEmpty
+     * 用于判定原始Observable是否未发射任何数据
+     */
+    public void rxjavaContainsObservable(){
+        Observable.just(2,30,22,5,60)
+                .contains(22)
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        System.out.println(aBoolean);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                });
+
+        Observable.just(2,30,22,5,60)
+                .isEmpty()
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        System.out.println(aBoolean);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("Error:"+throwable.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * amb操作符
+     * 给定两个或多个Observable，它只发射首先发射数据或通知的那个Observable的所有数据
+     * 当传递多个Observable给amb时，它只发射其中一个Observable的数据和通知，首先发送通知给amb的那个Observable，不管发射的是一项数据，还是一个
+     * onError或是onCompleted通知。amb将忽略和丢弃其他所有Observable的发射物
+     *
+     * 在Rxjava中,amb还有一个类似的操作符ambWith，例如Observable.amb(o1,o2)和o1.ambWith(o2)是等价的
+     * 在Rxjava2中，amb需要传递一个Iterable对象，或者使用ambArray来传递可变参数
+     *
+     */
+
+    public void rxjavaAmbObservable(){
+        Observable.ambArray(
+                Observable.just(1,2,3),
+                Observable.just(4,5,6)
+        ).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                System.out.println("integer:"+integer);
+            }
+        });
+
+        //执行结果  1，2，3
+        Observable.ambArray(
+                Observable.just(1,2,3).delay(1,TimeUnit.SECONDS),
+                Observable.just(4,5,6)
+        ).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                System.out.println("integer:"+integer);
+            }
+        });
+
+        //执行结果 4，5，6   由于第一个Observable延迟发射，由此我们只消费了第二个Observable的数据
+        //第一个Observbale发射的数据就不再处理了
+    }
+
+    /**
+     *  defaultIfEmpty操作符
+     *  发射来自原始Observable的值，如果原始Observable没有发射任何值，就发射一个默认值
+     *
+     *  defaultIfEmpty简单精确发射原始Observbale的值，如果原始Observable没有发射任何数据，就正常终止(以onComplete的形式了)，那么defaultIfEmpty返回的Observable就发射一个我们提供的默认值
+     *
+     *  defaultIfEmpty默认不在任何也定的调度器上执行
+     *  在defaultIfEmpty方法内部，其实调用的是switchIfEmpty操作符
+     */
+    public void rxjavaDefaultIfEmpty(){
+        Observable.empty()
+                .defaultIfEmpty(8)
+                .subscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        System.out.println("defaultIfEmpty:"+o);
+                    }
+                });
+    }
+
+    /**
+     * sequenceEqual操作符
+     *判断两个Observable是否发射相同的数据序列
+     * 传递两个Observable给sequenceEqual操作符时,它会比较两个Observbale的发射物，如果两个序列相同(相同的数据，
+     * 相同的顺序，相同的终止状态)，则发射true，否者发射false
+     */
+    public void rxjavaSequenceEqualObservable(){
+        Observable.sequenceEqual(
+                Observable.just(1,2,3,4,5),
+                Observable.just(1,2,3,4,5)
+        ).subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean aBoolean) throws Exception {
+               System.out.println("sequenceEqual:"+aBoolean);
+            }
+        });
+
+        /**
+         * sequenceEqual还有一个版本接受第三个参数,可以传递一个函数用于比较两个数据项是否相同
+         * 对于复杂对象的比较，用三个参数的版本更加合适
+         */
+        Observable.sequenceEqual(
+                Observable.just(4, 5, 6),
+                Observable.just(4, 5, 6),
+                new BiPredicate<Integer, Integer>() {
+                    @Override
+                    public boolean test(Integer integer, Integer integer2) throws Exception {
+                        return integer == integer2;
+                    }
+                }
+        ).subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean aBoolean) throws Exception {
+                System.out.println("sequenceEqual:"+aBoolean);
+            }
+        });
+    }
+
+
+    //################ skipUntil和skipWhile ################
+    /**
+     * skipUntil操作符
+     * 丢弃原始Observable发射的数据，直到第二个Observable发射了一项数据
+     *
+     * skipUntil订阅原始的Observable,但是忽略它的发射物，直到第二个Observable发射一项数据那一刻,它才开始发射原始Observable。skipUntil默认不在任何特定的调度器执行
+     *
+     * 原始Observable发射1到9这9个数字，初始延迟时间是0，每个间隔1ms，由于使用了skipUntil操作符，因此它会发射原始Observable在3ms之后的数据
+     *
+     */
+
+    public void rxjavaSkipuntilObservable(){
+        Observable.intervalRange(1,9,0,1,TimeUnit.SECONDS)
+                .skipUntil(Observable.timer(4,TimeUnit.MILLISECONDS))
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        System.out.println(String.valueOf(aLong));
+                    }
+                });
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * skipWhile操作符
+     * 丢弃Observable发射的数据，直到一个指定的条件不成立，
+     * skipWhile订阅原始Observable，但是忽略它的发射物，直到指定的某个条件变为false，他才开始发射原始的Observable，skipWhile默认不在任何特定的调度器上执行
+     *
+     */
+
+    public void rxjavaSkipWhileObservable(){
+        Observable.just(1,2,3,4)
+                .skipWhile(new Predicate<Integer>() {
+                    @Override
+                    public boolean test(Integer integer) throws Exception {
+                        return integer<=2;
+                    }
+                })
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println(String.valueOf(integer));
+                    }
+                });
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 
