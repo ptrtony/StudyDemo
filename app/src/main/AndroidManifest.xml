@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.zhaofan.studaydemo">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".openGL.OpenGLActivity">
+
+        </activity>
         <activity android:name=".MainActivity" />
         <activity android:name=".DrawActivity" />
-        <!-- <activity android:name=".LoginActivity"></activity> -->
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.zhaofan.studaydemo"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_camera"
+                tools:replace="android:resource" />
+        </provider> <!-- <activity android:name=".LoginActivity"></activity> -->
         <activity android:name=".OnSaveStoreActivity" />
         <activity android:name=".login.LoginActivity" />
         <activity android:name=".customview.MyTextViewActivity" />
@@ -30,9 +46,8 @@
         <activity android:name=".scrollview.RecyclerScrollViewActivity" />
         <activity android:name=".anim.AnimationActivity" />
         <activity android:name=".view.AutoTextActivity" />
-        <activity android:name=".view.PainterViewActivity"></activity>
-        <activity android:name=".ruler.RulerActivity">
-        </activity>
+        <activity android:name=".view.PainterViewActivity" />
+        <activity android:name=".ruler.RulerActivity" />
         <activity android:name=".touch_feedback.TouchActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,6 +55,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".rxjava.TimeDownActivity" />
     </application>
 
 </manifest>

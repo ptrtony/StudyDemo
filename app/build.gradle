@@ -5,7 +5,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 
-
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -80,4 +79,12 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.android.support:recyclerview-v7:28.0.0'
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+
+    implementation('com.zhaofan.im:sdk:1.1.18') {
+        exclude module: 'commons-collections'
+        exclude group: 'com.android.support'
+    }
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.github.bumptech.glide:glide:4.6.1'
+    implementation 'top.zibin:Luban:1.1.8'
 }

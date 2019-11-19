@@ -1,5 +1,6 @@
 package com.zhaofan.studaydemo.rxjava;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.util.Log;
 
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.reactivex.CompletableObserver;
+import io.reactivex.Flowable;
 import io.reactivex.Notification;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -22,6 +24,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.BiPredicate;
 import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.functions.Consumer;
@@ -140,7 +143,8 @@ import io.reactivex.schedulers.TestScheduler;
  * <p>
  * map(): 事件对象的直接变换，具体功能上面已经介绍过。它是 RxJava 最常用的变换。 map() 的示意图：
  * <p>
- * flatMap(): 这是一个很有用但非常难理解的变换，因此我决定花多些篇幅来介绍它。 首先假设这么一种需求：假设有一个数据结构『学生』，
+ *
+ *flatMap(): 这是一个很有用但非常难理解的变换，因此我决定花多些篇幅来介绍它。 首先假设这么一种需求：假设有一个数据结构『学生』，
  * 现在需要打印出一组学生的名字。实现方式很简单：
  * <p>
  * 依然很简单。那么如果我不想在 Subscriber 中使用 for 循环，而是希望 Subscriber 中直接传入单个的 Course 对象呢（这对于代码复用很重要）？
@@ -1540,7 +1544,7 @@ public class Rxjava遍历集合 {
          * 时长和时间单位通过的参数指定
          */
 
-        Observable.intervalRange(1,10,1,TimeUnit.SECONDS)
+        Observable.intervalRange(1,10,1,1,TimeUnit.SECONDS)
                 .take(3,TimeUnit.SECONDS)
                 .subscribe(new Consumer<Long>() {
                     @Override
@@ -2195,6 +2199,278 @@ public class Rxjava遍历集合 {
                     }
                 });
     }
+
+    //#################### 合并操作符与连接操作符 #########################
+    /**
+     * rxjava的合并操作符主要包括一下几个
+     *
+     * startWith():在数据序列的开头增加一项数据
+     *
+     * merge():将多个Observable合并为一个
+     *
+     * mergeDefaultError():合并多个Observable，让没有错误的Observable都完成后再发射错误通知
+     *
+     * zip():使用一个函数组合多个Observable发射的数据集合，然后再发射这个结果
+     *
+     * combineLatest():当两个Observable中的任何一个发射了一个数据时，再通过一个指定的函数组合每个Observable发射的最新数据(一共两个数据)，然后发射这个函数的结果
+     *
+     * join():and groupJoin():无论何时，如果一个Observable发射了一个数据项，就需要在另一个Observable发射的数据项定义的时间窗口内，将两个Observable发射的数据合并发射
+     *
+     * switchOnNext():讲一个发射Observable的Observable转换成另一个Observable，后者发射这些Observable最近发射的数据
+     *
+     * rxjava的连接操作符，主要是ConnectableObservable所使用的操作符和Observable所使用的操作符
+     *
+     * ConnectableObservable.connect():指示一个可连接的Observable开始发射的数据
+     *
+     * Observable.publish():讲一个Observable转换为一个可连接的Observable
+     *
+     * Observable.replay():确保所有的订阅者看到相同的数据序列，即使它们在Observable开始发射数据之后才订阅。
+     *
+     * ConnectableObservable.refCount():让一个可连接的Observable表现的像一个普通的Observable.
+     */
+
+
+    //##################### merge和zip ########################
+    /**
+     * merge操作符
+     *
+     * 合并多个Observable的发射物
+     *
+     * merge操作符可以将多个Observable的输出合并，使得他们像是单个的Observable一样
+     *
+     * merge是按照时间线并行的，如果传递给merge的任何一个Observable发射了onError通知终止，则merge操作符生成的Observable
+     * 也会立即以onError通知终止，如果想让它继续发射数据，直到最后才报告错误，则可以使用mergeDelayError操作符
+     *
+     * 如果只是两个被观察者合并，则还可以使用mergeWith操作符，Observable.merge(odds,events)等价于odds.mergeWith(events)
+     *
+     * merge最多只能合并4个被观察者，如果需要合并更多个被观察者，则可以使用mergeArray操作符
+     *
+     *
+     */
+
+    public void rxjavaMergeObservable(){
+        Observable odds = Observable.just(1,3,4,5);
+        Observable events = Observable.just(2,4,6);
+        Observable.merge(odds,events)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        System.out.println("onNext:"+integer);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.err.println("onError:"+throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("Sequence complete");
+                    }
+                });
+    }
+
+    /**
+     * zip操作符
+     *
+     * 通过一个函数将多个Observable的发射物集合在一起，基于这个函数的结果为每个结合体发射单个数据项
+     *
+     * zip操作符返回一个Observable，它使用这个函数按顺序结合两个或多个Observable发射的数据项，然后发射这个函数返回的结果，它按照严格的顺序应用这个函数，只发射
+     * 与发射数据项最少的这个Observable一样多的数据
+     *
+     * zip的最后一个参数接受每个Observable发射的一项数据，返回被压缩后的数据，他可以接受1～9个参数：一个Observable序列，或者一些发射Observable的Observable
+     *
+     * 执行结果  2  7 8 10
+     */
+
+    public void rxjavaZipObservable(){
+        Observable odds = Observable.just(1,3,4,5,6);
+        Observable events = Observable.just(1,4,5);
+        Observable.zip(odds, events, new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                return integer+integer2;
+            }
+        }).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                System.out.println("Next:" + integer);
+            }
+        }, new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                System.err.println("Error:" + throwable.getMessage());
+            }
+        }, new Action() {
+            @Override
+            public void run() throws Exception {
+                System.out.println("Sequence complete");
+            }
+        });
+    }
+
+    //################# combineLatest 和 join ###################3
+    /**
+     * combineLatest操作符
+     *
+     *combineLast操作符的行为类似于zip，但是只有当原始的Observable中的每一个都发射了一条数据时zip才发射数据。而combineLatest则是当原始的Observable
+     * 中的任意一个发射了数据时就发射了一条数据。当原始Observable的任何一个发射了一条数据时，combineLatest使用一个函数结合它们最近发射的数据，然后发射这个函数
+     * 的返回值
+     *
+     * 执行的结果 7 9 11
+     */
+
+    public void rxjavaCombineLatestObservable(){
+        Observable<Integer> odds = Observable.just(1,3,5);
+        Observable<Integer> events = Observable.just(2,4,6);
+        Observable.combineLatest(odds, events, new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                return integer+integer2;
+            }
+        }).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                System.out.println("Next:"+integer);
+            }
+        }, new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                System.err.println("Error:"+throwable.getMessage());
+            }
+        }, new Action() {
+            @Override
+            public void run() throws Exception {
+                System.out.println("Sequence complete");
+            }
+        });
+    }
+
+    /**
+     * join操作符
+     * join操作符结合两个Observable发射的数据，基于时间窗口（针对每条数据特定的原则）选择待集合的数据项，将这些时间窗口实现为一些Observable，他们
+     * 的生命周期从任何一条Observable的每一条数据开始，当这个定义时间窗口的Observable发射了一条数据或者完成时，与这条数据关联的窗口也会关闭，只要这条数据
+     * 的窗口是打开的 他就继续结合其他Observable发射的任何数据项
+     */
+
+    @SuppressLint("CheckResult")
+    public void rxjavaJoinObservable(){
+        Observable o1 = Observable.just(1,2,3);
+        Observable o2 = Observable.just(4,5,6);
+//
+//        o1.join(o2,new Function<Integer,ObservableSource<String>>(){
+//
+//            @Override
+//            public ObservableSource<String> apply(Integer integer) throws Exception {
+//                return Observable.just(String.valueOf(integer));
+//            }
+//        });
+    }
+
+    /**
+     * startWith
+     * 在数据序列的开头插入一条指定的项
+     *
+     * 如果想让一个Observable在发射数据之前发射一个指定的数据序列，则可以使用startWith操作符.如果想在一个Observable发射数据的末尾追加一个数据序列，则可以使用
+     * concat操作符
+     *
+     * 执行结果 Hello Java Hello Kotlin  Hello Scale   Hello Rx
+     */
+
+    public void rxjavaStartWithObservable(){
+        Observable.just("Hello Java","Hello Kotlin","Hello Scale")
+                .startWith("Hello Rx")
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) throws Exception {
+                        System.out.println(s);
+                    }
+                });
+
+        //startWithArray
+        Observable.just("Hello Java","Hello Kotlin","Hello Scale")
+                .startWithArray("Hello Groovy","Hello Clogure")
+        .subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                System.out.println(s);
+            }
+        });
+    }
+
+
+    private void printlnHelloWorld(){
+        Observable.just("hello world")
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) throws Exception {
+                        System.out.println(s);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.out.println(throwable.getMessage());
+                    }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        System.out.println("onComplete");
+                    }
+                });
+
+
+        Observable.just("HELLO WORLD")
+                .map(new Function<String, String>() {
+
+                    @Override
+                    public String apply(String s) throws Exception {
+                        return s.toLowerCase();
+                    }
+                }).flatMap(new Function<String, ObservableSource<?>>() {
+            @Override
+            public ObservableSource<?> apply(String s) throws Exception {
+                return Observable.just(s);
+            }
+        });
+
+    }
+
+
+
+
+    private List<Hotel> getHotelLists(){
+        List<Hotel> hotels = new ArrayList<>();
+        return hotels;
+    }
+
+
+    private class Hotel{
+        public String name;
+
+        public String id;
+        public List<Home> homes;
+
+        public class Home{
+            public String homeNum;
+            public Integer price;
+            public String id;
+        }
+    }
+
+    //############### connect push 和refCount ############
+    /**
+     * 曾经讲解过connect push refCount 这三个操作符。其中，connect和refCount是ConnectableObservable所使用的操作符
+     *
+     * connectableObservable继承自Observable,然而它并不是在调用subscribe()的时候发射数据，而是只有对其使用connect操作符时它才会发射数据，所以可以用来
+     * 更灵活地控制数据发射的时机，另外 connectableObservable是Hot Observable
+     *
+     * push操作符是将普通的Observable转换成connectableObservable
+     *
+     * connect操作哟翻译是用来触发connectableObservable发射数据的，我们可以等所有的观察者们都订阅了connectableObservable之后再发射数据
+     *
+     */
+
+
 
 
 
